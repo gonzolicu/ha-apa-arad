@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+import aiohttp
 import voluptuous as vol
 
 from homeassistant import config_entries
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import selector
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.aiohttp_client import async_create_clientsession
 
 from .api import ApaAradApi
 from .const import DOMAIN, NAME
@@ -16,8 +17,16 @@ async def _async_validate_credentials(
     hass: HomeAssistant, username: str, password: str
 ) -> bool:
     """Validate credentials against the Apa Arad portal."""
-    api = ApaAradApi(username, password, async_get_clientsession(hass))
-    return await api.async_login()
+    session = async_create_clientsession(
+        hass,
+        auto_cleanup=False,
+        cookie_jar=aiohttp.CookieJar(),
+    )
+    api = ApaAradApi(username, password, session)
+    try:
+        return await api.async_login()
+    finally:
+        session.detach()
 
 
 def _validate_email_username(username: str) -> bool:

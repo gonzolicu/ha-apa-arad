@@ -10,7 +10,6 @@ from .parser import parse_consumption_history, parse_dashboard
 
 _LOGGER = logging.getLogger(__name__)
 
-LOGIN_URL = "https://user.croscloud.com/croscloudpwd/openid"
 PORTAL_URL = "https://myarad.croscloud.com/crosweb"
 PORTAL_PAGES = (
     "/facturi/index",
@@ -58,22 +57,28 @@ class ApaAradApi:
         self.session = websession or aiohttp.ClientSession()
 
     async def async_login(self) -> bool:
-        login_url = LOGIN_URL
-        selected_community = "APARAD.MYACCOUNT"
-
         try:
             async with self.session.get(PORTAL_URL, allow_redirects=True) as resp:
+                if resp.status >= 400:
+                    return False
+
                 login_html = await resp.text()
                 form_match = LOGIN_FORM_RE.search(login_html)
-                if form_match:
-                    login_url = urljoin(str(resp.url), form_match.group("action"))
+                if not form_match:
+                    _LOGGER.debug(
+                        "Portal login form was not found at URL: %s", resp.url
+                    )
+                    return False
 
                 community_match = COMMUNITY_RE.search(login_html)
-                if community_match:
-                    selected_community = community_match.group("value")
+                if not community_match:
+                    _LOGGER.debug("Portal community field was not found")
+                    return False
 
+                login_url = urljoin(str(resp.url), form_match.group("action"))
+                selected_community = community_match.group("value")
                 _LOGGER.debug("Using login URL: %s", login_url)
-        except aiohttp.ClientError as err:
+        except (aiohttp.ClientError, TimeoutError) as err:
             _LOGGER.debug("Failed to load login form: %s", err)
             return False
 
@@ -98,7 +103,7 @@ class ApaAradApi:
                     return False
 
                 return self._is_authenticated(str(resp.url), text)
-        except aiohttp.ClientError as err:
+        except (aiohttp.ClientError, TimeoutError) as err:
             _LOGGER.debug("Login failed: %s", err)
             return False
 

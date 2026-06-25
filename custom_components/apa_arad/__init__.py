@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import logging
 
+import aiohttp
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.aiohttp_client import async_create_clientsession
 
 from .api import ApaAradApi
 from .coordinator import ApaAradCoordinator
@@ -26,12 +27,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     username = entry.data[CONF_USERNAME]
     password = entry.data[CONF_PASSWORD]
 
-    api = ApaAradApi(username, password, async_get_clientsession(hass))
+    session = async_create_clientsession(
+        hass,
+        cookie_jar=aiohttp.CookieJar(),
+    )
+    api = ApaAradApi(username, password, session)
 
     # Verify credentials
     success = await api.async_login()
     if not success:
-        await api.async_close()
+        session.detach()
         raise ConfigEntryAuthFailed("Failed to authenticate with Compania de Apa Arad")
 
     coordinator = ApaAradCoordinator(hass, api)
