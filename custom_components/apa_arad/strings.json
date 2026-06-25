@@ -1,16 +1,16 @@
 {
   "config": {
     "error": {
-      "cannot_connect": "Autentificarea a esuat. Verifica utilizatorul si parola."
+      "cannot_connect": "Authentication failed. Check the username and password."
     },
     "step": {
       "reauth_confirm": {
-        "title": "Reconectare Compania de Apa Arad",
-        "description": "Introdu parola pentru {username}."
+        "title": "Reconnect Compania de Apa Arad",
+        "description": "Enter the password for {username}."
       },
       "user": {
         "title": "Compania de Apa Arad",
-        "description": "Introdu utilizatorul si parola."
+        "description": "Enter username and password."
       }
     }
   }

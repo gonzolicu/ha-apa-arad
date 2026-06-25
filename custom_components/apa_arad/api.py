@@ -1,5 +1,7 @@
 import logging
+import re
 from typing import Any
+from urllib.parse import urljoin
 
 import aiohttp
 
@@ -7,6 +9,14 @@ _LOGGER = logging.getLogger(__name__)
 
 LOGIN_URL = "https://user.croscloud.com/croscloudpwd/openid"
 PORTAL_URL = "https://myarad.croscloud.com/crosweb"
+LOGIN_FORM_RE = re.compile(
+    r'<button[^>]+id=["\']submit["\'][^>]+formaction=["\'](?P<action>[^"\']+)["\']',
+    re.IGNORECASE,
+)
+COMMUNITY_RE = re.compile(
+    r'<input[^>]+name=["\']selected_community["\'][^>]+value=["\'](?P<value>[^"\']+)["\']',
+    re.IGNORECASE,
+)
 
 
 class ApaAradApi:
@@ -26,8 +36,27 @@ class ApaAradApi:
         self.session = websession or aiohttp.ClientSession()
 
     async def async_login(self) -> bool:
+        login_url = LOGIN_URL
+        selected_community = "APARAD.MYACCOUNT"
+
+        try:
+            async with self.session.get(PORTAL_URL, allow_redirects=True) as resp:
+                login_html = await resp.text()
+                form_match = LOGIN_FORM_RE.search(login_html)
+                if form_match:
+                    login_url = urljoin(str(resp.url), form_match.group("action"))
+
+                community_match = COMMUNITY_RE.search(login_html)
+                if community_match:
+                    selected_community = community_match.group("value")
+
+                _LOGGER.debug("Using login URL: %s", login_url)
+        except aiohttp.ClientError as err:
+            _LOGGER.debug("Failed to load login form: %s", err)
+            return False
+
         data = {
-            "selected_community": "APARAD.MYACCOUNT",
+            "selected_community": selected_community,
             "username": self._username,
             "password": self._password,
             "rememberme": "on",
@@ -35,12 +64,13 @@ class ApaAradApi:
         }
 
         try:
-            async with self.session.post(LOGIN_URL, data=data, allow_redirects=True) as resp:
-                _LOGGER.debug("Login response status: %s", resp.status)
-                # Successful form login will typically redirect; accept 200/302
-                if resp.status in (200, 302):
-                    return True
-                return False
+            async with self.session.post(login_url, data=data, allow_redirects=True) as resp:
+                text = await resp.text()
+                _LOGGER.debug("Login response status: %s, url: %s", resp.status, resp.url)
+                if resp.status >= 400:
+                    return False
+
+                return self._is_authenticated(str(resp.url), text)
         except aiohttp.ClientError as err:
             _LOGGER.debug("Login failed: %s", err)
             return False
@@ -58,6 +88,13 @@ class ApaAradApi:
             resp.raise_for_status()
             text = await resp.text()
             return text
+
+    @staticmethod
+    def _is_authenticated(url: str, html: str) -> bool:
+        """Return true when the response no longer looks like the login form."""
+        if "form-password" in html or "croscloud_pwd" in html:
+            return False
+        return "myarad.croscloud.com/crosweb" in url or "croswebSession" in html
 
     async def async_close(self) -> None:
         if not self._external_session:
