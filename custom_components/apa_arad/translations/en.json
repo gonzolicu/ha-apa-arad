@@ -25,7 +25,6 @@
       "apa_arad_meter": {"name": "Apa Arad Meter"},
       "apa_arad_status": {"name": "Apa Arad Status"},
       "apa_arad_username": {"name": "Apa Arad Username"},
-      "apa_arad_customer_name": {"name": "Apa Arad Account Holder"},
       "apa_arad_address": {"name": "Apa Arad Address"}
     },
     "button": {

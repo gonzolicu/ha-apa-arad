@@ -25,7 +25,6 @@
       "apa_arad_meter": {"name": "Contor Apa Arad"},
       "apa_arad_status": {"name": "Status Apa Arad"},
       "apa_arad_username": {"name": "Utilizator Apa Arad"},
-      "apa_arad_customer_name": {"name": "Titular Apa Arad"},
       "apa_arad_address": {"name": "Adresă Apa Arad"}
     },
     "button": {

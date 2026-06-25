@@ -74,6 +74,13 @@ def _debug_contexts(text: str) -> list[str]:
 def parse_dashboard(html: str, username: str) -> dict[str, Any]:
     """Extract supported values from dashboard HTML."""
     text = _text_from_html(html)
+    location_input = re.search(
+        r"<input\b(?=[^>]*\btitle=['\"]Loc consum['\"])[^>]*"
+        r"\bvalue=['\"](?P<value>[^'\"]+)['\"]",
+        html,
+        re.IGNORECASE,
+    )
+    location_value = unescape(location_input.group("value")) if location_input else None
 
     balance_raw = _search(
         (
@@ -156,7 +163,7 @@ def parse_dashboard(html: str, username: str) -> dict[str, Any]:
 
     meter_number = _search(
         (
-            r"(?:num[ăa]r(?:ul)?\s+(?:de\s+)?contor|serie\s+contor|contor)"
+            r"(?:num[ăa]r(?:ul)?\s+(?:de\s+)?contor|serie\s+contor)"
             r".{0,60}?(?P<value>[A-Z0-9][A-Z0-9./-]{3,})",
         ),
         text,
@@ -173,13 +180,6 @@ def parse_dashboard(html: str, username: str) -> dict[str, Any]:
         ),
         text,
     )
-    customer_name = _search(
-        (
-            r"(?:nume\s+(?:client|titular)|client|titular)"
-            r"\s*[:|-]\s*(?P<value>[^|]{3,100}?)(?=\s+\||$)",
-        ),
-        text,
-    )
     service_address = _search(
         (
             r"loc\s+consum\s+(?:[A-Z0-9./-]+\s*-\s*)?"
@@ -189,10 +189,13 @@ def parse_dashboard(html: str, username: str) -> dict[str, Any]:
         ),
         text,
     )
+    if location_value:
+        location_parts = re.split(r"\s+-\s+", location_value, maxsplit=1)
+        if len(location_parts) == 2:
+            service_address = location_parts[1].strip()
 
     return {
         "username": username,
-        "customer_name": customer_name,
         "service_address": service_address,
         "balance": _number(balance_raw) if balance_raw else None,
         "balance_raw": balance_raw,

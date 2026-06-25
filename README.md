@@ -24,7 +24,7 @@ Creată de **GonZo**.
 
 ## Entitati
 
-Integrarea poate crea senzori pentru status, utilizator, titular, adresa de consum,
+Integrarea poate crea senzori pentru status, utilizator, adresa de consum,
 sold, ultima factura, consum si numar contor, plus un buton pentru actualizare
 manuala.
 

@@ -12,7 +12,6 @@ REDACT_KEYS = {
     "raw_html",
     "parser_debug",
     "username",
-    "customer_name",
     "service_address",
     "self_reading_code",
     "contract_number",

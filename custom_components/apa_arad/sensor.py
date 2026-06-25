@@ -4,6 +4,7 @@ from typing import Any
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -12,6 +13,13 @@ from .const import ATTRIBUTION, CREATOR, DOMAIN, NAME
 
 async def async_setup_entry(hass, entry: ConfigEntry, async_add_entities) -> None:
     coordinator = hass.data[DOMAIN][entry.entry_id]
+    entity_registry = er.async_get(hass)
+    old_unique_id = f"apa_arad_customer_name_{entry.entry_id}"
+    old_entity_id = entity_registry.async_get_entity_id(
+        "sensor", DOMAIN, old_unique_id
+    )
+    if old_entity_id:
+        entity_registry.async_remove(old_entity_id)
 
     sensors = [
         ApaAradStatusSensor(coordinator, entry),
@@ -21,7 +29,6 @@ async def async_setup_entry(hass, entry: ConfigEntry, async_add_entities) -> Non
         ApaAradIndexSensor(coordinator, entry),
         ApaAradMeterSensor(coordinator, entry),
         ApaAradUsernameSensor(coordinator, entry),
-        ApaAradCustomerNameSensor(coordinator, entry),
         ApaAradAddressSensor(coordinator, entry),
     ]
 
@@ -172,20 +179,6 @@ class ApaAradUsernameSensor(ApaAradBaseSensor):
     @property
     def native_value(self) -> Any:
         return self.coordinator.data.get("username")
-
-
-class ApaAradCustomerNameSensor(ApaAradBaseSensor):
-    @property
-    def name(self) -> str:
-        return f"{self._entry.title} Titular"
-
-    @property
-    def unique_id(self) -> str:
-        return f"apa_arad_customer_name_{self._entry.entry_id}"
-
-    @property
-    def native_value(self) -> Any:
-        return self.coordinator.data.get("customer_name")
 
 
 class ApaAradAddressSensor(ApaAradBaseSensor):

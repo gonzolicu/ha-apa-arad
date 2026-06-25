@@ -23,7 +23,6 @@ class ParserTests(unittest.TestCase):
         result = parse_dashboard(html, "user@example.com")
 
         self.assertEqual(result["username"], "user@example.com")
-        self.assertEqual(result["customer_name"], "Cata GonZo")
         self.assertEqual(result["service_address"], "Strada Exemplu nr. 10, Arad")
         self.assertEqual(result["balance"], 123.45)
         self.assertEqual(result["last_invoice"], 87.2)
@@ -90,6 +89,23 @@ class ParserTests(unittest.TestCase):
 
         self.assertEqual(result["consumption_last_period"], 1.75)
         self.assertEqual(result["consumption_period"], "06.2026")
+
+    def test_extracts_address_from_location_input(self) -> None:
+        html = """
+        <input title='Loc consum'
+               value='67629/11.10.2024  -  str PODGORIEI nr 29 ARAD, jud ARAD'>
+        """
+
+        result = parse_dashboard(html, "user@example.com")
+
+        self.assertEqual(
+            result["service_address"], "str PODGORIEI nr 29 ARAD, jud ARAD"
+        )
+
+    def test_does_not_use_associated_as_meter_number(self) -> None:
+        result = parse_dashboard("<div>Contor asociat</div>", "user@example.com")
+
+        self.assertIsNone(result["meter_number"])
 
     def test_debug_context_does_not_include_tokens_or_email(self) -> None:
         token = "eyJ" + "a" * 120
