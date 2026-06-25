@@ -1,5 +1,9 @@
 # Compania de Apa Arad pentru Home Assistant
 
+<p align="center">
+  <img src="images/logo.png" alt="Compania de Apa Arad" width="160">
+</p>
+
 Integrare custom pentru Home Assistant care se autentifica in portalul Compania de Apa Arad si expune informatii gasite in cont.
 
 ## Instalare prin HACS
