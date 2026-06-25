@@ -1,0 +1,10 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Compania de Apa Arad",
+        "description": "Enter username and password."
+      }
+    }
+  }
+}
