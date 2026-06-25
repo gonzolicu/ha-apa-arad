@@ -1,15 +1,16 @@
 import aiohttp
 
-class ApaAradApi:
-    def __init__(self,username,password):
-        self.username=username
-        self.password=password
-        self.session=aiohttp.ClientSession()
 
-    async def login(self):
-        # TODO: implement using HAR analysis
+class ApaAradApi:
+    def __init__(self, username, password):
+        self._username = username
+        self._password = password
+        self._session = aiohttp.ClientSession()
+
+    async def async_login(self):
+        # TODO: implement with real portal flow
         return True
 
-    async def async_fetch_dashboard(self):
-        await self.login()
-        return {}
+    async def async_get_dashboard(self):
+        await self.async_login()
+        return {"status": "ok"}
