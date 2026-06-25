@@ -12,7 +12,8 @@ REDACT_KEYS = {"raw_html"}
 async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ConfigEntry) -> dict:
     """Return diagnostics for a config entry.
 
-    No credentials or cookies are returned. We expose parsed values only.
+    No passwords or cookies are returned. Parsed account information and short
+    parser contexts are included so portal layout changes can be diagnosed.
     """
     coordinator = hass.data[DOMAIN][entry.entry_id]
     data = coordinator.data or {}

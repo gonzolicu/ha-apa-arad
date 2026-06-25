@@ -21,8 +21,12 @@
       "apa_arad_balance": {"name": "Apa Arad Balance"},
       "apa_arad_last_invoice": {"name": "Apa Arad Last Invoice"},
       "apa_arad_consumption": {"name": "Apa Arad Consumption"},
+      "apa_arad_latest_index": {"name": "Apa Arad Latest Index"},
       "apa_arad_meter": {"name": "Apa Arad Meter"},
-      "apa_arad_status": {"name": "Apa Arad Status"}
+      "apa_arad_status": {"name": "Apa Arad Status"},
+      "apa_arad_username": {"name": "Apa Arad Username"},
+      "apa_arad_customer_name": {"name": "Apa Arad Account Holder"},
+      "apa_arad_address": {"name": "Apa Arad Address"}
     },
     "button": {
       "apa_arad_refresh": {"name": "Refresh Apa Arad"}

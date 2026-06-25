@@ -6,6 +6,8 @@
 
 Integrare custom pentru Home Assistant care se autentifica in portalul Compania de Apa Arad si expune informatii gasite in cont.
 
+Creată de **GonZo**.
+
 ## Instalare prin HACS
 
 1. In Home Assistant, deschide HACS.
@@ -22,6 +24,8 @@ Integrare custom pentru Home Assistant care se autentifica in portalul Compania 
 
 ## Entitati
 
-Integrarea poate crea senzori pentru status, sold, ultima factura, consum si numar contor, plus un buton pentru actualizare manuala.
+Integrarea poate crea senzori pentru status, utilizator, titular, adresa de consum,
+sold, ultima factura, consum si numar contor, plus un buton pentru actualizare
+manuala.
 
 Valorile sunt extrase din pagina web a portalului, deci pot necesita ajustari daca portalul isi schimba structura HTML.

@@ -8,7 +8,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, NAME
+from .const import CREATOR, DOMAIN, NAME
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -36,7 +36,9 @@ class ApaAradRefreshButton(CoordinatorEntity, ButtonEntity):
         return DeviceInfo(
             identifiers={(DOMAIN, self._entry.entry_id)},
             name=NAME,
-            manufacturer="Compania de Apa Arad",
+            manufacturer=CREATOR,
+            model="Compania de Apa Arad cloud account",
+            configuration_url="https://myarad.croscloud.com/crosweb",
         )
 
     async def async_press(self) -> None:

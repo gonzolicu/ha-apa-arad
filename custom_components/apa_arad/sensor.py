@@ -7,7 +7,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, NAME
+from .const import ATTRIBUTION, CREATOR, DOMAIN, NAME
 
 
 async def async_setup_entry(hass, entry: ConfigEntry, async_add_entities) -> None:
@@ -18,13 +18,19 @@ async def async_setup_entry(hass, entry: ConfigEntry, async_add_entities) -> Non
         ApaAradBalanceSensor(coordinator, entry),
         ApaAradLastInvoiceSensor(coordinator, entry),
         ApaAradConsumptionSensor(coordinator, entry),
+        ApaAradIndexSensor(coordinator, entry),
         ApaAradMeterSensor(coordinator, entry),
+        ApaAradUsernameSensor(coordinator, entry),
+        ApaAradCustomerNameSensor(coordinator, entry),
+        ApaAradAddressSensor(coordinator, entry),
     ]
 
     async_add_entities(sensors)
 
 
 class ApaAradBaseSensor(CoordinatorEntity, SensorEntity):
+    _attr_attribution = ATTRIBUTION
+
     def __init__(self, coordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator)
         self._entry = entry
@@ -38,7 +44,9 @@ class ApaAradBaseSensor(CoordinatorEntity, SensorEntity):
         return DeviceInfo(
             identifiers={(DOMAIN, self._entry.entry_id)},
             name=NAME,
-            manufacturer="Compania de Apa Arad",
+            manufacturer=CREATOR,
+            model="Compania de Apa Arad cloud account",
+            configuration_url="https://myarad.croscloud.com/crosweb",
         )
 
 
@@ -59,6 +67,8 @@ class ApaAradStatusSensor(ApaAradBaseSensor):
 
 
 class ApaAradBalanceSensor(ApaAradBaseSensor):
+    _attr_native_unit_of_measurement = "RON"
+
     @property
     def name(self) -> str:
         return f"{self._entry.title} Sold"
@@ -71,12 +81,9 @@ class ApaAradBalanceSensor(ApaAradBaseSensor):
     def native_value(self) -> Any:
         return self.coordinator.data.get("balance")
 
-    @property
-    def unit_of_measurement(self) -> str:
-        return "RON"
-
-
 class ApaAradLastInvoiceSensor(ApaAradBaseSensor):
+    _attr_native_unit_of_measurement = "RON"
+
     @property
     def name(self) -> str:
         return f"{self._entry.title} Ultima factura"
@@ -89,8 +96,19 @@ class ApaAradLastInvoiceSensor(ApaAradBaseSensor):
     def native_value(self) -> Any:
         return self.coordinator.data.get("last_invoice")
 
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        return {
+            "invoice_number": self.coordinator.data.get("last_invoice_number"),
+            "invoice_date": self.coordinator.data.get("last_invoice_date"),
+            "due_date": self.coordinator.data.get("last_invoice_due_date"),
+            "status": self.coordinator.data.get("last_invoice_status"),
+        }
+
 
 class ApaAradConsumptionSensor(ApaAradBaseSensor):
+    _attr_native_unit_of_measurement = "m³"
+
     @property
     def name(self) -> str:
         return f"{self._entry.title} Consum"
@@ -102,11 +120,6 @@ class ApaAradConsumptionSensor(ApaAradBaseSensor):
     @property
     def native_value(self) -> Any:
         return self.coordinator.data.get("consumption_last_period")
-
-    @property
-    def unit_of_measurement(self) -> str:
-        return "m3"
-
 
 class ApaAradMeterSensor(ApaAradBaseSensor):
     @property
@@ -120,3 +133,66 @@ class ApaAradMeterSensor(ApaAradBaseSensor):
     @property
     def native_value(self) -> Any:
         return self.coordinator.data.get("meter_number")
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        return {
+            "contract": self.coordinator.data.get("contract_number"),
+            "self_reading_code": self.coordinator.data.get("self_reading_code"),
+        }
+
+
+class ApaAradIndexSensor(ApaAradBaseSensor):
+    @property
+    def name(self) -> str:
+        return f"{self._entry.title} Ultimul index"
+
+    @property
+    def unique_id(self) -> str:
+        return f"apa_arad_latest_index_{self._entry.entry_id}"
+
+    @property
+    def native_value(self) -> Any:
+        return self.coordinator.data.get("latest_index")
+
+
+class ApaAradUsernameSensor(ApaAradBaseSensor):
+    @property
+    def name(self) -> str:
+        return f"{self._entry.title} Utilizator"
+
+    @property
+    def unique_id(self) -> str:
+        return f"apa_arad_username_{self._entry.entry_id}"
+
+    @property
+    def native_value(self) -> Any:
+        return self.coordinator.data.get("username")
+
+
+class ApaAradCustomerNameSensor(ApaAradBaseSensor):
+    @property
+    def name(self) -> str:
+        return f"{self._entry.title} Titular"
+
+    @property
+    def unique_id(self) -> str:
+        return f"apa_arad_customer_name_{self._entry.entry_id}"
+
+    @property
+    def native_value(self) -> Any:
+        return self.coordinator.data.get("customer_name")
+
+
+class ApaAradAddressSensor(ApaAradBaseSensor):
+    @property
+    def name(self) -> str:
+        return f"{self._entry.title} Adresă"
+
+    @property
+    def unique_id(self) -> str:
+        return f"apa_arad_address_{self._entry.entry_id}"
+
+    @property
+    def native_value(self) -> Any:
+        return self.coordinator.data.get("service_address")

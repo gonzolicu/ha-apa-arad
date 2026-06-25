@@ -21,8 +21,12 @@
       "apa_arad_balance": {"name": "Sold Apa Arad"},
       "apa_arad_last_invoice": {"name": "Ultima factură Apa Arad"},
       "apa_arad_consumption": {"name": "Consum Apa Arad"},
+      "apa_arad_latest_index": {"name": "Ultimul index Apa Arad"},
       "apa_arad_meter": {"name": "Contor Apa Arad"},
-      "apa_arad_status": {"name": "Status Apa Arad"}
+      "apa_arad_status": {"name": "Status Apa Arad"},
+      "apa_arad_username": {"name": "Utilizator Apa Arad"},
+      "apa_arad_customer_name": {"name": "Titular Apa Arad"},
+      "apa_arad_address": {"name": "Adresă Apa Arad"}
     },
     "button": {
       "apa_arad_refresh": {"name": "Actualizează Apa Arad"}
