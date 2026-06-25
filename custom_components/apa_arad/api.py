@@ -1,16 +1,24 @@
 import logging
+import json
 import re
 from typing import Any
 from urllib.parse import urljoin
 
 import aiohttp
 
-from .parser import parse_dashboard
+from .parser import parse_consumption_history, parse_dashboard
 
 _LOGGER = logging.getLogger(__name__)
 
 LOGIN_URL = "https://user.croscloud.com/croscloudpwd/openid"
 PORTAL_URL = "https://myarad.croscloud.com/crosweb"
+PORTAL_PAGES = (
+    "/facturi/index",
+    "/facturi/istoric_facturi",
+    "/evolutie_consum/index",
+    "/index_utilitati/index",
+    "/profile/index",
+)
 LOGIN_FORM_RE = re.compile(
     r'<button[^>]+id=["\']submit["\'][^>]+formaction=["\'](?P<action>[^"\']+)["\']',
     re.IGNORECASE,
@@ -21,6 +29,14 @@ COMMUNITY_RE = re.compile(
 )
 NOTIFICATION_RE = re.compile(
     r'showNotificationMessages\(\{"msg":\[\{"value":"(?P<message>.*?)",\s*"type":"ERROR"',
+    re.IGNORECASE,
+)
+BODY_RESOURCE_RE = re.compile(
+    r'"bodyResource"\s*:\s*"(?P<url>https?:\\?/\\?/[^"]+)"',
+    re.IGNORECASE,
+)
+LAZY_DATA_RE = re.compile(
+    r'\\"data\\"\s*:\s*\\"(?P<url>https?:\\\\?/\\\\?/[^"]+?ajaxEndpoint[^"]+?)\\"',
     re.IGNORECASE,
 )
 
@@ -105,6 +121,57 @@ class ApaAradApi:
                         raise PermissionError("Apa Arad authentication failed")
             return text
 
+    async def _async_get_authenticated_text(self, url: str) -> str:
+        """Fetch an authenticated portal resource."""
+        async with self.session.get(url, allow_redirects=True) as resp:
+            resp.raise_for_status()
+            text = await resp.text()
+            if not self._is_authenticated(str(resp.url), text):
+                raise PermissionError("Apa Arad session expired")
+            return text
+
+    @staticmethod
+    def _decode_embedded_url(url: str) -> str:
+        return url.replace("\\/", "/")
+
+    async def _async_fetch_rendered_page(
+        self, path: str
+    ) -> tuple[str, list[dict[str, Any]]]:
+        """Fetch a CrosWeb page body and any lazy-loaded tabular data."""
+        page_url = urljoin(f"{PORTAL_URL}/", path.lstrip("/"))
+        page_html = await self._async_get_authenticated_text(page_url)
+        fragments = [page_html]
+        datasets: list[dict[str, Any]] = []
+
+        body_match = BODY_RESOURCE_RE.search(page_html)
+        if not body_match:
+            return "\n".join(fragments), datasets
+
+        body_url = self._decode_embedded_url(body_match.group("url"))
+        body_text = await self._async_get_authenticated_text(body_url)
+        fragments.append(body_text)
+
+        try:
+            body_payload = json.loads(body_text)
+        except json.JSONDecodeError:
+            return "\n".join(fragments), datasets
+
+        body_html = body_payload.get("body")
+        if isinstance(body_html, str):
+            fragments.append(body_html)
+
+        for match in LAZY_DATA_RE.finditer(body_text):
+            data_url = self._decode_embedded_url(match.group("url"))
+            data_text = await self._async_get_authenticated_text(data_url)
+            try:
+                data = json.loads(data_text)
+            except json.JSONDecodeError:
+                continue
+            if isinstance(data, list):
+                datasets.extend(item for item in data if isinstance(item, dict))
+
+        return "\n".join(fragments), datasets
+
     @staticmethod
     def _is_authenticated(url: str, html: str) -> bool:
         """Return true when the response no longer looks like the login form."""
@@ -130,8 +197,22 @@ class ApaAradApi:
 
         Returns a dictionary with parsed values. Values may be None if not found.
         """
-        html = await self.async_get_dashboard()
-        return parse_dashboard(html, self._username)
+        await self.async_get_dashboard()
+
+        fragments: list[str] = []
+        datasets: list[dict[str, Any]] = []
+        for path in PORTAL_PAGES:
+            try:
+                page_html, page_datasets = await self._async_fetch_rendered_page(path)
+            except (aiohttp.ClientError, PermissionError) as err:
+                _LOGGER.debug("Unable to fetch Apa Arad page %s: %s", path, err)
+                continue
+            fragments.append(page_html)
+            datasets.extend(page_datasets)
+
+        parsed = parse_dashboard("\n".join(fragments), self._username)
+        parsed.update(parse_consumption_history(datasets))
+        return parsed
 
     async def async_request_with_reauth(self, method: str, url: str, **kwargs):
         """Perform a request and re-authenticate once on 401/403."""

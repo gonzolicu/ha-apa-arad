@@ -121,6 +121,10 @@ class ApaAradConsumptionSensor(ApaAradBaseSensor):
     def native_value(self) -> Any:
         return self.coordinator.data.get("consumption_last_period")
 
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        return {"period": self.coordinator.data.get("consumption_period")}
+
 class ApaAradMeterSensor(ApaAradBaseSensor):
     @property
     def name(self) -> str:

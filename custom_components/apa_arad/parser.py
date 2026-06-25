@@ -203,3 +203,22 @@ def parse_dashboard(html: str, username: str) -> dict[str, Any]:
         "contract_number": contract_number,
         "parser_debug": _debug_contexts(text),
     }
+
+
+def parse_consumption_history(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    """Return the latest monthly consumption from portal chart rows."""
+    valid_rows = [
+        row
+        for row in rows
+        if str(row.get("an", "")).isdigit()
+        and str(row.get("luna", "")).isdigit()
+        and _number(str(row.get("consum", ""))) is not None
+    ]
+    if not valid_rows:
+        return {}
+
+    latest = max(valid_rows, key=lambda row: (int(row["an"]), int(row["luna"])))
+    return {
+        "consumption_last_period": _number(str(latest["consum"])),
+        "consumption_period": f"{int(latest['luna']):02d}.{latest['an']}",
+    }

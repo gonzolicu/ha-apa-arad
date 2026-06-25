@@ -6,7 +6,7 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).parents[1] / "custom_components" / "apa_arad"))
 
-from parser import parse_dashboard  # noqa: E402
+from parser import parse_consumption_history, parse_dashboard  # noqa: E402
 
 
 class ParserTests(unittest.TestCase):
@@ -78,6 +78,18 @@ class ParserTests(unittest.TestCase):
         self.assertEqual(
             result["service_address"], "str PODGORIEI nr 29 ARAD, jud ARAD"
         )
+
+    def test_extracts_latest_monthly_consumption(self) -> None:
+        rows = [
+            {"an": "2026", "luna": "05", "consum": 6.83},
+            {"an": "2025", "luna": "12", "consum": 18.74},
+            {"an": "2026", "luna": "06", "consum": 1.75},
+        ]
+
+        result = parse_consumption_history(rows)
+
+        self.assertEqual(result["consumption_last_period"], 1.75)
+        self.assertEqual(result["consumption_period"], "06.2026")
 
 
 if __name__ == "__main__":
