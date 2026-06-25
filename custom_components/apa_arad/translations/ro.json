@@ -20,6 +20,8 @@
     "sensor": {
       "apa_arad_balance": {"name": "Sold Apa Arad"},
       "apa_arad_last_invoice": {"name": "Ultima factură Apa Arad"},
+      "apa_arad_invoice_date": {"name": "Data emiterii facturii"},
+      "apa_arad_invoice_due_date": {"name": "Data scadenței facturii"},
       "apa_arad_consumption": {"name": "Consum Apa Arad"},
       "apa_arad_latest_index": {"name": "Ultimul index Apa Arad"},
       "apa_arad_meter": {"name": "Contor Apa Arad"},

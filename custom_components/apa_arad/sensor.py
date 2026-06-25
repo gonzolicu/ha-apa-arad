@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from datetime import date, datetime
 from typing import Any
 
-from homeassistant.components.sensor import SensorEntity
+from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceInfo
@@ -25,6 +26,8 @@ async def async_setup_entry(hass, entry: ConfigEntry, async_add_entities) -> Non
         ApaAradStatusSensor(coordinator, entry),
         ApaAradBalanceSensor(coordinator, entry),
         ApaAradLastInvoiceSensor(coordinator, entry),
+        ApaAradInvoiceDateSensor(coordinator, entry),
+        ApaAradInvoiceDueDateSensor(coordinator, entry),
         ApaAradConsumptionSensor(coordinator, entry),
         ApaAradIndexSensor(coordinator, entry),
         ApaAradMeterSensor(coordinator, entry),
@@ -107,10 +110,52 @@ class ApaAradLastInvoiceSensor(ApaAradBaseSensor):
     def extra_state_attributes(self) -> dict[str, Any]:
         return {
             "invoice_number": self.coordinator.data.get("last_invoice_number"),
-            "invoice_date": self.coordinator.data.get("last_invoice_date"),
-            "due_date": self.coordinator.data.get("last_invoice_due_date"),
             "status": self.coordinator.data.get("last_invoice_status"),
         }
+
+
+def _parse_portal_date(value: str | None) -> date | None:
+    """Convert a portal date to a Home Assistant date value."""
+    if not value:
+        return None
+    try:
+        return datetime.strptime(value, "%d.%m.%Y").date()
+    except ValueError:
+        return None
+
+
+class ApaAradInvoiceDateSensor(ApaAradBaseSensor):
+    _attr_device_class = SensorDeviceClass.DATE
+
+    @property
+    def name(self) -> str:
+        return f"{self._entry.title} Data emiterii"
+
+    @property
+    def unique_id(self) -> str:
+        return f"apa_arad_invoice_date_{self._entry.entry_id}"
+
+    @property
+    def native_value(self) -> date | None:
+        return _parse_portal_date(self.coordinator.data.get("last_invoice_date"))
+
+
+class ApaAradInvoiceDueDateSensor(ApaAradBaseSensor):
+    _attr_device_class = SensorDeviceClass.DATE
+
+    @property
+    def name(self) -> str:
+        return f"{self._entry.title} Data scadenței"
+
+    @property
+    def unique_id(self) -> str:
+        return f"apa_arad_invoice_due_date_{self._entry.entry_id}"
+
+    @property
+    def native_value(self) -> date | None:
+        return _parse_portal_date(
+            self.coordinator.data.get("last_invoice_due_date")
+        )
 
 
 class ApaAradConsumptionSensor(ApaAradBaseSensor):

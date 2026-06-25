@@ -25,7 +25,7 @@ Creată de **GonZo**.
 ## Entitati
 
 Integrarea poate crea senzori pentru status, utilizator, adresa de consum,
-sold, ultima factura, consum si numar contor, plus un buton pentru actualizare
-manuala.
+sold, ultima factura, data emiterii, data scadentei, consum si numar contor,
+plus un buton pentru actualizare manuala.
 
 Valorile sunt extrase din pagina web a portalului, deci pot necesita ajustari daca portalul isi schimba structura HTML.
