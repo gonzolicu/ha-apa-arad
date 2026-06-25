@@ -1,0 +1,12 @@
+{
+  "domain": "apa_arad",
+  "name": "Compania de Apa Arad",
+  "version": "0.0.1",
+  "config_flow": true,
+  "documentation": "https://github.com/gonzolicu/ha-apa-arad",
+  "issue_tracker": "https://github.com/gonzolicu/ha-apa-arad/issues",
+  "codeowners": ["@gonzolicu"],
+  "iot_class": "cloud_polling",
+  "integration_type": "service",
+  "requirements": []
+}
