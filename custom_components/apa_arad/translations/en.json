@@ -1,6 +1,13 @@
 {
   "config": {
+    "error": {
+      "cannot_connect": "Authentication failed. Check the username and password."
+    },
     "step": {
+      "reauth_confirm": {
+        "title": "Reconnect Compania de Apa Arad",
+        "description": "Enter the password for {username}."
+      },
       "user": {
         "title": "Compania de Apa Arad",
         "description": "Enter username and password."
