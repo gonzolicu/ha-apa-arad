@@ -1,16 +1,10 @@
 import aiohttp
 
-
+LOGIN_URL="https://user.croscloud.com/croscloudpwd/openid"
 class ApaAradApi:
-    def __init__(self, username, password):
-        self._username = username
-        self._password = password
-        self._session = aiohttp.ClientSession()
-
+    def __init__(self,u,p):
+        self.u=u; self.p=p; self.session=aiohttp.ClientSession()
     async def async_login(self):
-        # TODO: implement with real portal flow
-        return True
-
-    async def async_get_dashboard(self):
-        await self.async_login()
-        return {"status": "ok"}
+        data={"selected_community":"APARAD.MYACCOUNT","username":self.u,"password":self.p,"rememberme":"on","croscloud_pwd":""}
+        async with self.session.post(LOGIN_URL,data=data,allow_redirects=True) as r:
+            return r.status==200
