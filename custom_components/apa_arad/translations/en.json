@@ -1,7 +1,8 @@
 {
   "config": {
     "error": {
-      "cannot_connect": "Authentication failed. Check the username and password."
+      "email_required": "Use the email address for your Apa Arad account.",
+      "invalid_auth": "Authentication failed. Check the email and password."
     },
     "step": {
       "reauth_confirm": {

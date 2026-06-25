@@ -17,6 +17,10 @@ COMMUNITY_RE = re.compile(
     r'<input[^>]+name=["\']selected_community["\'][^>]+value=["\'](?P<value>[^"\']+)["\']',
     re.IGNORECASE,
 )
+NOTIFICATION_RE = re.compile(
+    r'showNotificationMessages\(\{"msg":\[\{"value":"(?P<message>.*?)",\s*"type":"ERROR"',
+    re.IGNORECASE,
+)
 
 
 class ApaAradApi:
@@ -70,6 +74,11 @@ class ApaAradApi:
                 if resp.status >= 400:
                     return False
 
+                error_message = self._extract_login_error(text)
+                if error_message:
+                    _LOGGER.debug("Login rejected by portal: %s", error_message)
+                    return False
+
                 return self._is_authenticated(str(resp.url), text)
         except aiohttp.ClientError as err:
             _LOGGER.debug("Login failed: %s", err)
@@ -95,6 +104,14 @@ class ApaAradApi:
         if "form-password" in html or "croscloud_pwd" in html:
             return False
         return "myarad.croscloud.com/crosweb" in url or "croswebSession" in html
+
+    @staticmethod
+    def _extract_login_error(html: str) -> str | None:
+        """Extract the portal login error message when one is present."""
+        match = NOTIFICATION_RE.search(html)
+        if not match:
+            return None
+        return match.group("message")
 
     async def async_close(self) -> None:
         if not self._external_session:

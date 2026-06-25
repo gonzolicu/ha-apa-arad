@@ -20,6 +20,11 @@ async def _async_validate_credentials(
     return await api.async_login()
 
 
+def _validate_email_username(username: str) -> bool:
+    """Return true when the portal username looks like an email address."""
+    return "@" in username
+
+
 def _credentials_schema(username: str | None = None) -> vol.Schema:
     """Return the credentials form schema."""
     username_field = vol.Required(CONF_USERNAME)
@@ -43,10 +48,12 @@ class ApaAradConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors = {}
 
         if user_input is not None:
-            if not await _async_validate_credentials(
+            if not _validate_email_username(user_input[CONF_USERNAME]):
+                errors["base"] = "email_required"
+            elif not await _async_validate_credentials(
                 self.hass, user_input[CONF_USERNAME], user_input[CONF_PASSWORD]
             ):
-                errors["base"] = "cannot_connect"
+                errors["base"] = "invalid_auth"
             else:
                 await self.async_set_unique_id(user_input[CONF_USERNAME])
                 self._abort_if_unique_id_configured()
@@ -78,7 +85,7 @@ class ApaAradConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             if not await _async_validate_credentials(
                 self.hass, username, user_input[CONF_PASSWORD]
             ):
-                errors["base"] = "cannot_connect"
+                errors["base"] = "invalid_auth"
             else:
                 return self.async_update_reload_and_abort(
                     self._reauth_entry,

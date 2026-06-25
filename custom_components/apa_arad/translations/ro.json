@@ -1,7 +1,8 @@
 {
   "config": {
     "error": {
-      "cannot_connect": "Autentificarea a esuat. Verifica utilizatorul si parola."
+      "email_required": "Foloseste adresa de email a contului Apa Arad.",
+      "invalid_auth": "Autentificarea a esuat. Verifica emailul si parola."
     },
     "step": {
       "reauth_confirm": {
