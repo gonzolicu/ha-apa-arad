@@ -1,9 +1,15 @@
-"""API client placeholder for Compania de Apa Arad."""
+import aiohttp
 
 class ApaAradApi:
-    def __init__(self, username: str, password: str):
-        self.username = username
-        self.password = password
+    def __init__(self,username,password):
+        self.username=username
+        self.password=password
+        self.session=aiohttp.ClientSession()
 
     async def login(self):
-        raise NotImplementedError("Login will be implemented in the next step.")
+        # TODO: implement using HAR analysis
+        return True
+
+    async def async_fetch_dashboard(self):
+        await self.login()
+        return {}
