@@ -10,6 +10,11 @@ _TAG_RE = re.compile(r"<[^>]+>")
 _SPACE_RE = re.compile(r"\s+")
 _AMOUNT = r"[-+]?\d{1,3}(?:[.\s]\d{3})*(?:,\d{1,2})|[-+]?\d+(?:[.,]\d{1,2})?"
 _DATE = r"\d{1,2}[./-]\d{1,2}[./-]\d{4}"
+_TOKEN_RE = re.compile(
+    r"(?:eyJ|[A-Za-z0-9_-]{30,}\.)[A-Za-z0-9_.-]{40,}",
+    re.IGNORECASE,
+)
+_EMAIL_RE = re.compile(r"[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}")
 
 
 def _text_from_html(html: str) -> str:
@@ -55,14 +60,14 @@ def _debug_contexts(text: str) -> list[str]:
         "contor",
         "loc consum",
         "adres",
-        "client",
-        "titular",
     ):
         match = re.search(label, text, re.IGNORECASE)
         if match:
             start = max(0, match.start() - 60)
             end = min(len(text), match.end() + 180)
-            contexts.append(text[start:end])
+            context = _TOKEN_RE.sub("<redacted_token>", text[start:end])
+            context = _EMAIL_RE.sub("<redacted_email>", context)
+            contexts.append(context)
     return contexts
 
 

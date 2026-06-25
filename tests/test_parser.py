@@ -91,6 +91,16 @@ class ParserTests(unittest.TestCase):
         self.assertEqual(result["consumption_last_period"], 1.75)
         self.assertEqual(result["consumption_period"], "06.2026")
 
+    def test_debug_context_does_not_include_tokens_or_email(self) -> None:
+        token = "eyJ" + "a" * 120
+        html = f"<div>Sold {token} user@example.com 10,00 Lei</div>"
+
+        result = parse_dashboard(html, "user@example.com")
+        debug = " ".join(result["parser_debug"])
+
+        self.assertNotIn(token, debug)
+        self.assertNotIn("user@example.com", debug)
+
 
 if __name__ == "__main__":
     unittest.main()

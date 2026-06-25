@@ -38,6 +38,10 @@ LAZY_DATA_RE = re.compile(
     r'\\"data\\"\s*:\s*\\"(?P<url>https?:\\\\?/\\\\?/[^"]+?ajaxEndpoint[^"]+?)\\"',
     re.IGNORECASE,
 )
+AJAX_ITEM_RE = re.compile(
+    r"generateItemWithAjax\([^,]+,\s*['\"](?P<url>https?:\\?/\\?/[^'\"]+ajaxEndpoint[^'\"]+)['\"]",
+    re.IGNORECASE,
+)
 
 
 class ApaAradApi:
@@ -165,9 +169,15 @@ class ApaAradApi:
         if isinstance(body_html, str):
             fragments.append(body_html)
 
-        for match in LAZY_DATA_RE.finditer(body_text):
-            data_url = self._decode_embedded_url(match.group("url"))
+        resource_urls = {
+            self._decode_embedded_url(match.group("url"))
+            for pattern in (LAZY_DATA_RE, AJAX_ITEM_RE)
+            for match in pattern.finditer(body_text)
+        }
+
+        for data_url in resource_urls:
             data_text = await self._async_get_authenticated_text(data_url)
+            fragments.append(data_text)
             try:
                 data = json.loads(data_text)
             except json.JSONDecodeError:
