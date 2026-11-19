@@ -120,3 +120,57 @@ class ParserTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class AmountDueTests(unittest.TestCase):
+    def setUp(self) -> None:
+        from datetime import date
+
+        self.today = date(2026, 11, 19)
+        self.base = {
+            "balance": 0.0,
+            "last_invoice": 60.87,
+            "last_invoice_status": "Neplatita",
+            "last_invoice_due_date": "27.11.2026",
+            "unpaid_total_table": None,
+        }
+
+    def test_unpaid_invoice_not_yet_due(self) -> None:
+        from parser import compute_amount_due
+
+        result = compute_amount_due(self.base, self.today)
+        self.assertEqual(result["amount_due"], 60.87)
+        self.assertEqual(result["amount_overdue"], 0.0)
+        self.assertEqual(result["unpaid_count"], 1)
+
+    def test_unpaid_invoice_past_due(self) -> None:
+        from datetime import date
+        from parser import compute_amount_due
+
+        result = compute_amount_due(self.base, date(2026, 11, 30))
+        self.assertEqual(result["amount_overdue"], 60.87)
+
+    def test_paid_invoice(self) -> None:
+        from parser import compute_amount_due
+
+        result = compute_amount_due({**self.base, "last_invoice_status": "Platita"}, self.today)
+        self.assertEqual(result["amount_due"], 0.0)
+        self.assertEqual(result["unpaid_count"], 0)
+
+    def test_invoice_table_is_preferred(self) -> None:
+        from parser import compute_amount_due, parse_unpaid_invoices
+
+        rows = [
+            {"numar": "FAR0 2", "rest_de_plata": "60,87"},
+            {"numar": "FAR0 1", "rest_de_plata": "0,00"},
+        ]
+        table = parse_unpaid_invoices(rows)
+        self.assertEqual(table["unpaid_total_table"], 60.87)
+        result = compute_amount_due({**self.base, **table}, self.today)
+        self.assertEqual(result["amount_due_source"], "tabel facturi")
+
+    def test_rows_without_amounts_are_ignored(self) -> None:
+        from parser import parse_unpaid_invoices
+
+        result = parse_unpaid_invoices([{"an": "2026", "luna": "11", "consum": "1,21"}])
+        self.assertIsNone(result["unpaid_total_table"])

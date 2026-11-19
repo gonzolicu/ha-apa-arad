@@ -5,8 +5,10 @@ import logging
 from typing import Any
 
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN, DEFAULT_SCAN_INTERVAL
+from .parser import compute_amount_due
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -23,6 +25,8 @@ class ApaAradCoordinator(DataUpdateCoordinator):
 
     async def _async_update_data(self) -> Any:
         try:
-            return await self.api.async_fetch_parsed_dashboard()
+            data = await self.api.async_fetch_parsed_dashboard()
         except Exception as err:
             raise UpdateFailed(f"Error communicating with Compania de Apa Arad: {err}") from err
+        data.update(compute_amount_due(data, dt_util.now().date()))
+        return data

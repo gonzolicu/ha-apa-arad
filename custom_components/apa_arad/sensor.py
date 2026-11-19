@@ -25,6 +25,8 @@ async def async_setup_entry(hass, entry: ConfigEntry, async_add_entities) -> Non
     sensors = [
         ApaAradStatusSensor(coordinator, entry),
         ApaAradBalanceSensor(coordinator, entry),
+        ApaAradAmountDueSensor(coordinator, entry),
+        ApaAradOverdueSensor(coordinator, entry),
         ApaAradLastInvoiceSensor(coordinator, entry),
         ApaAradInvoiceDateSensor(coordinator, entry),
         ApaAradInvoiceDueDateSensor(coordinator, entry),
@@ -90,6 +92,49 @@ class ApaAradBalanceSensor(ApaAradBaseSensor):
     @property
     def native_value(self) -> Any:
         return self.coordinator.data.get("balance")
+
+class ApaAradAmountDueSensor(ApaAradBaseSensor):
+    _attr_native_unit_of_measurement = "RON"
+    _attr_icon = "mdi:cash-clock"
+
+    @property
+    def name(self) -> str:
+        return f"{self._entry.title} De plată"
+
+    @property
+    def unique_id(self) -> str:
+        return f"apa_arad_amount_due_{self._entry.entry_id}"
+
+    @property
+    def native_value(self) -> Any:
+        return self.coordinator.data.get("amount_due")
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        return {
+            "unpaid_invoices": self.coordinator.data.get("unpaid_count"),
+            "source": self.coordinator.data.get("amount_due_source"),
+            "overdue": self.coordinator.data.get("amount_overdue"),
+            "due_date": self.coordinator.data.get("last_invoice_due_date"),
+        }
+
+
+class ApaAradOverdueSensor(ApaAradBaseSensor):
+    _attr_native_unit_of_measurement = "RON"
+    _attr_icon = "mdi:cash-remove"
+
+    @property
+    def name(self) -> str:
+        return f"{self._entry.title} Restanță"
+
+    @property
+    def unique_id(self) -> str:
+        return f"apa_arad_amount_overdue_{self._entry.entry_id}"
+
+    @property
+    def native_value(self) -> Any:
+        return self.coordinator.data.get("amount_overdue")
+
 
 class ApaAradLastInvoiceSensor(ApaAradBaseSensor):
     _attr_native_unit_of_measurement = "RON"

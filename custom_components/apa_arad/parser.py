@@ -230,3 +230,100 @@ def parse_consumption_history(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "consumption_last_period": _number(str(latest["consum"])),
         "consumption_period": f"{int(latest['luna']):02d}.{latest['an']}",
     }
+
+
+_UNPAID_STATUS_RE = re.compile(r"nepl[ăa]tit|restant", re.IGNORECASE)
+_ROW_AMOUNT_KEYS = (
+    "rest_de_plata",
+    "restdeplata",
+    "rest_plata",
+    "restplata",
+    "suma_restanta",
+    "de_plata",
+    "deplata",
+    "sold",
+    "rest",
+)
+
+
+def parse_unpaid_invoices(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    """Sum the unpaid amounts from invoice tables, when the portal provides them.
+
+    Only column names are kept for diagnostics, never values.
+    """
+    found = False
+    total = 0.0
+    count = 0
+    for row in rows:
+        lowered = {str(key).lower(): value for key, value in row.items()}
+        amount = None
+        for key, value in lowered.items():
+            if any(key == name or key.endswith("_" + name) for name in _ROW_AMOUNT_KEYS):
+                amount = _number(str(value))
+                if amount is not None:
+                    break
+        if amount is None:
+            continue
+        found = True
+        if amount > 0.009:
+            total += amount
+            count += 1
+    keys = sorted({",".join(sorted(str(k) for k in row.keys()))[:200] for row in rows})
+    return {
+        "unpaid_total_table": round(total, 2) if found else None,
+        "unpaid_count_table": count if found else None,
+        "dataset_keys": keys[:10],
+    }
+
+
+def _portal_date(value: str | None):
+    from datetime import datetime
+
+    if not value:
+        return None
+    try:
+        return datetime.strptime(value, "%d.%m.%Y").date()
+    except ValueError:
+        return None
+
+
+def compute_amount_due(data: dict[str, Any], today) -> dict[str, Any]:
+    """Work out what is left to pay and what is overdue.
+
+    The portal "sold" only counts overdue money ("facturile sunt la zi" means 0),
+    so an issued but unpaid invoice is added from the invoice table or, failing
+    that, from the latest invoice and its status.
+    """
+    balance = data.get("balance") or 0.0
+    table_total = data.get("unpaid_total_table")
+    last_invoice = data.get("last_invoice") or 0.0
+    last_unpaid = bool(_UNPAID_STATUS_RE.search(data.get("last_invoice_status") or ""))
+
+    if table_total is not None:
+        due = table_total
+        count = data.get("unpaid_count_table") or 0
+        source = "tabel facturi"
+    elif balance > 0:
+        due = balance
+        count = 1
+        source = "sold portal"
+    elif last_unpaid and last_invoice > 0:
+        due = last_invoice
+        count = 1
+        source = "ultima factură"
+    else:
+        due = 0.0
+        count = 0
+        source = "la zi"
+
+    due_date = _portal_date(data.get("last_invoice_due_date"))
+    overdue = 0.0
+    if due > 0 and due_date is not None and due_date < today:
+        overdue = due
+
+    return {
+        "amount_due": round(due, 2),
+        "amount_overdue": round(overdue, 2),
+        "unpaid_count": count,
+        "amount_due_source": source,
+    }
