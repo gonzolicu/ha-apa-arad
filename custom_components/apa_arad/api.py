@@ -6,7 +6,7 @@ from urllib.parse import urljoin
 
 import aiohttp
 
-from .parser import parse_consumption_history, parse_dashboard
+from .parser import parse_consumption_history, parse_dashboard, parse_unpaid_invoices
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -227,6 +227,7 @@ class ApaAradApi:
 
         parsed = parse_dashboard("\n".join(fragments), self._username)
         parsed.update(parse_consumption_history(datasets))
+        parsed.update(parse_unpaid_invoices(datasets))
         return parsed
 
     async def async_request_with_reauth(self, method: str, url: str, **kwargs):
